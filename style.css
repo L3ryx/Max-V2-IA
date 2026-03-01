@@ -72,3 +72,10 @@ font-size:20px;
 border-radius:20px;
 padding:20px;
 }
+#three-container {
+position: fixed;
+top: 0;
+left: 0;
+z-index: -1;
+pointer-events: none;
+}
