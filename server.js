@@ -1,56 +1,83 @@
 const express = require("express");
 const path = require("path");
+const fetch = require("node-fetch");
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Page principale
+const HF_TOKEN = process.env.Banana; // Ta clé render
+const HF_API = "https://api-inference.huggingface.co/models/gpt2";
+
+/* ===============================
+   ROUTE PAGE
+=================================*/
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Generate API
+/* ===============================
+   GENERATION IA
+=================================*/
+
 app.post("/generate", async (req, res) => {
 
-  const data = req.body;
+  const { genre, age, haut, bas, fond, angle, autoMode } = req.body;
 
-  const lockedRules = `
-Always centered.
-Resolution 800x1000px.
-Cinematic lighting.
-Real skin texture.
-Shallow depth of field.
-50mm lens.
-Sunglasses from attached image must be placed on face.
-Sunglasses are main focus.
-Never describe sunglasses as outfit.
-Output ONLY in English.
-Professional photography.
+  let basePrompt = `
+Create a Nano Banana ultra realistic prompt.
+
+Age: ${age}
+Gender: ${genre}
+Top: ${haut}
+Bottom: ${bas}
+Background: ${fond}
+Angle: ${angle}
+
+Rules:
+- 800x1000px
+- Cinematic lighting
+- Professional photography
+- Banana aesthetic
 `;
 
-  const prompt = `
-Age: ${data.age}
-Genre: ${data.genre}
-Top: ${data.haut}
-Bottom: ${data.bas}
-Environment: ${data.fond}
-Camera Angle: ${data.angle}
+  if (autoMode) {
+    basePrompt += "\nGenerate creative random elements and new sentences.";
+  }
 
-${lockedRules}
-`;
+  try {
 
-  res.json({ prompt });
+    const response = await fetch(HF_API, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${HF_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        inputs: basePrompt,
+        parameters: {
+          max_new_tokens: 250,
+          temperature: 1.2,
+          top_p: 0.95,
+          do_sample: true
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    res.json({
+      prompt: data[0]?.generated_text || basePrompt
+    });
+
+  } catch (err) {
+    res.json({ prompt: "🔥 IA ERROR" });
+  }
 
 });
 
-// Port
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
-});
+app.listen(PORT, () => console.log("🚀 Server Running"));
