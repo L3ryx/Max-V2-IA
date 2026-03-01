@@ -1,68 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🍌 Banana Generator</title>
+<title>Banana V2</title>
 
 <link rel="stylesheet" href="style.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 </head>
 <body>
 
-<h1>🍌 BANANA GENERATOR</h1>
+<!-- ================= TITRE ================= -->
+
+<h1 class="title">🍌 BANANA V2</h1>
+
+<!-- ================= 3D BACKGROUND ================= -->
+
+<div id="three-container"></div>
+
+<!-- ================= INTERFACE ================= -->
 
 <div class="container">
 
-<label>Genre</label>
 <select id="genre">
 <option>Homme</option>
 <option>Femme</option>
+<option>Cyber Banana</option>
+<option>Robot Banana</option>
+<option>Alien Banana</option>
 </select>
 
-<label>Age</label>
 <select id="age"></select>
-
-<label>Haut</label>
 <select id="haut"></select>
-
-<label>Bas</label>
 <select id="bas"></select>
-
-<label>Fond</label>
 <select id="fond"></select>
-
-<label>Angle</label>
 <select id="angle"></select>
 
 <label>
 <input type="checkbox" id="autoMode">
-Mode Aléatoire IA
+🎲 Mode Random IA
 </label>
 
-<button class="generate" onclick="generate()">🚀 GENERER</button>
-<button class="copy" onclick="copyText()">📋 COPIER</button>
+<button onclick="generate()">🚀 GENERER PROMPT</button>
 
-<textarea id="output"></textarea>
+<textarea id="output" placeholder="Ton prompt apparaîtra ici..."></textarea>
 
 </div>
 
 <script>
 
-/* LISTES */
+/* ===============================
+   MENU OPTIONS
+================================*/
 
-const hauts=["T-shirt","Hoodie","Blazer","Top luxe","Chemise","Veste cuir"];
-const bas=["Jean","Cargo","Short","Pantalon","Jupe","Legging"];
-const fonds=["Studio","Plage","Rooftop","Villa","Forêt","Ville Nuit"];
-const angles=["Face","3/4","Profil","Contre-plongée"];
+const hauts=["T-shirt","Hoodie","Blazer","Armor Banana","Tech Suit","Golden Jacket","Streetwear Pro"];
+const bas=["Jean","Cargo","Short","Cyber Pants","Leather Pants","Neon Pants"];
+const fonds=["Studio","Plage","Rooftop","Ville Nuit","Space Station","Jungle","Digital World"];
+const angles=["Face","Profil","3/4","Low Angle","High Angle","Drone View"];
 
-/* Fill Select */
+/* Remplir selects */
 
 function fill(id,list){
-let s=document.getElementById(id);
+let select=document.getElementById(id);
 list.forEach(item=>{
 let opt=document.createElement("option");
 opt.textContent=item;
-s.appendChild(opt);
+select.appendChild(opt);
 });
 }
 
@@ -74,13 +79,15 @@ fill("angle",angles);
 /* Age */
 
 let ageSelect=document.getElementById("age");
-for(let i=18;i<=60;i++){
+for(let i=16;i<=70;i++){
 let opt=document.createElement("option");
 opt.textContent=i;
 ageSelect.appendChild(opt);
 }
 
-/* Generate */
+/* ===============================
+   GENERATE
+================================*/
 
 async function generate(){
 
@@ -101,17 +108,122 @@ body:JSON.stringify(data)
 });
 
 let json=await res.json();
+
 document.getElementById("output").value=json.prompt;
 }
 
-/* Copy */
+/* ===============================
+   🌟 3D BANANES PHYSICS
+================================*/
 
-function copyText(){
-let txt=document.getElementById("output");
-txt.select();
-document.execCommand("copy");
-alert("Copié !");
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+camera.position.z = 8;
+
+const renderer = new THREE.WebGLRenderer({alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.getElementById("three-container").appendChild(renderer.domElement);
+
+/* Lumière */
+
+scene.add(new THREE.AmbientLight(0xffffff,1.2));
+const light = new THREE.DirectionalLight(0xffffff,2);
+light.position.set(5,10,5);
+scene.add(light);
+
+/* Geometry */
+
+const geometry = new THREE.SphereGeometry(0.7,32,32);
+const material = new THREE.MeshStandardMaterial({
+color:0xffd500,
+roughness:0.4
+});
+
+let bananas=[];
+
+function spawnBanana(){
+
+const banana=new THREE.Mesh(geometry,material);
+
+banana.position.x=(Math.random()-0.5)*10;
+banana.position.y=6+Math.random()*5;
+banana.position.z=(Math.random()-0.5)*5;
+
+banana.velocity={
+x:(Math.random()-0.5)*0.1,
+y:-0.02-Math.random()*0.05,
+z:(Math.random()-0.5)*0.1
+};
+
+scene.add(banana);
+bananas.push(banana);
 }
+
+setInterval(()=>{
+if(bananas.length<50){
+spawnBanana();
+}
+},400);
+
+/* Physics */
+
+function updatePhysics(){
+
+bananas.forEach(b=>{
+
+b.velocity.y-=0.0005;
+
+b.position.x+=b.velocity.x;
+b.position.y+=b.velocity.y;
+b.position.z+=b.velocity.z;
+
+/* Collision sol */
+
+if(b.position.y<-3){
+b.position.y=-3;
+b.velocity.y*=-0.6;
+}
+
+/* Walls */
+
+if(Math.abs(b.position.x)>6){
+b.velocity.x*=-1;
+}
+
+if(Math.abs(b.position.z)>4){
+b.velocity.z*=-1;
+}
+
+b.rotation.x+=0.02;
+b.rotation.y+=0.03;
+
+});
+
+}
+
+/* Animation */
+
+function animate(){
+requestAnimationFrame(animate);
+updatePhysics();
+renderer.render(scene,camera);
+}
+
+animate();
+
+/* Responsive */
+
+window.addEventListener("resize",()=>{
+camera.aspect=window.innerWidth/window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth,window.innerHeight);
+});
 
 </script>
 
