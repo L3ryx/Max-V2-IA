@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍌 Banana Generator</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>🍌 BANANA GENERATOR</h1>
+
+<div class="container">
+
+<label>Genre</label>
+<select id="genre">
+<option>Homme</option>
+<option>Femme</option>
+</select>
+
+<label>Age</label>
+<select id="age"></select>
+
+<label>Haut</label>
+<select id="haut"></select>
+
+<label>Bas</label>
+<select id="bas"></select>
+
+<label>Fond</label>
+<select id="fond"></select>
+
+<label>Angle</label>
+<select id="angle"></select>
+
+<label>
+<input type="checkbox" id="autoMode">
+Mode Aléatoire IA
+</label>
+
+<button class="generate" onclick="generate()">🚀 GENERER</button>
+<button class="copy" onclick="copyText()">📋 COPIER</button>
+
+<textarea id="output"></textarea>
+
+</div>
+
+<script>
+
+/* LISTES */
+
+const hauts=["T-shirt","Hoodie","Blazer","Top luxe","Chemise","Veste cuir"];
+const bas=["Jean","Cargo","Short","Pantalon","Jupe","Legging"];
+const fonds=["Studio","Plage","Rooftop","Villa","Forêt","Ville Nuit"];
+const angles=["Face","3/4","Profil","Contre-plongée"];
+
+/* Fill Select */
+
+function fill(id,list){
+let s=document.getElementById(id);
+list.forEach(item=>{
+let opt=document.createElement("option");
+opt.textContent=item;
+s.appendChild(opt);
+});
+}
+
+fill("haut",hauts);
+fill("bas",bas);
+fill("fond",fonds);
+fill("angle",angles);
+
+/* Age */
+
+let ageSelect=document.getElementById("age");
+for(let i=18;i<=60;i++){
+let opt=document.createElement("option");
+opt.textContent=i;
+ageSelect.appendChild(opt);
+}
+
+/* Generate */
+
+async function generate(){
+
+let data={
+genre:document.getElementById("genre").value,
+age:document.getElementById("age").value,
+haut:document.getElementById("haut").value,
+bas:document.getElementById("bas").value,
+fond:document.getElementById("fond").value,
+angle:document.getElementById("angle").value,
+autoMode:document.getElementById("autoMode").checked
+};
+
+let res=await fetch("/generate",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(data)
+});
+
+let json=await res.json();
+document.getElementById("output").value=json.prompt;
+}
+
+/* Copy */
+
+function copyText(){
+let txt=document.getElementById("output");
+txt.select();
+document.execCommand("copy");
+alert("Copié !");
+}
+
+</script>
+
+</body>
+</html>
